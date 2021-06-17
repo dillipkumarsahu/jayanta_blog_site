@@ -51,6 +51,10 @@ $(document).ready(function() {
             let c;
             $(".blg-head-list").each(function(){
                 $(this).click(function(){
+                    $("#show-hide-comment-add").addClass("d-none");
+                    $("#load-comments").removeClass("d-none");
+                    $("#view-comments").html("");
+
                     h = $(this).attr("heading");
                     sh = $(this).attr("sub-heading");
                     i = $(this).attr("image");
@@ -62,22 +66,139 @@ $(document).ready(function() {
                     $("#image").attr("src",i);
                     $("#content").html(c);
                     $("#comment-form").attr("blog-id",id);
+                    $("#load-comments").attr("blog-id",id);
                     $("#popup").removeClass("d-none");
                     // console.log(sh);
                     $("#close-popup").click(function(){
                         $("#popup").addClass("d-none");
                     });
+
+
                 });
             });
         });
-
-        $("#comment-form").on("submit", function(e){
-            e.preventDefault();
-            var id = $(this).attr("blog-id");
-            var comment = $("#comment").val();
-
-            
-        });
         
     });
+
+    $("#load-comments").click(function(){
+        $("#view-comments").html("");
+        $("#show-hide-comment-add").removeClass("d-none");
+        $("#load-comments").addClass("d-none");
+
+        var id = $("#load-comments").attr("blog-id");
+
+        db.collection('blogs').doc('comments_'+id).get()
+        .then(function (res){
+            console.log(res.data());
+            var comment;
+            var check = res.data();
+
+            if(check == undefined)
+            {
+                $("#comment-form").on("submit", function(e){
+                    e.preventDefault();
+                    comment = $("#comment").val();
+                    $("#post-btn").attr("disabled",true);
+                    $("#post-btn").html("Wait...");
+                    comment = [comment];
+
+                    db.collection('blogs').doc('comments_'+id).set({
+                        comment:comment
+                    }).then(function (){
+                        comment = "";
+                        $("#comment-form").trigger('reset');
+                        $("#post-btn").html("success");
+                        setTimeout(function() {
+                            $("#post-btn").attr("disabled",false);
+                            $("#post-btn").html("Post");
+                            // check = "done";
+                            console.log(check);
+                        },1000);
+                    }).catch(function(err) {
+                        console.log(err);
+                    });
+                });
+
+                //show comments
+                var ui = `
+                    <div class="w-25 border-bottom border-light text-light d-flex align-items-center justify-content-center">
+                        <p style="font-weight: 200;">No Comments yet</p>
+                    </div>
+                `;
+                $("#view-comments").append(ui);
+                
+            }
+            else{
+                
+                comment = res.data().comment;
+                console.log(comment);
+                $("#comment-form").on("submit", function(e){
+                    e.preventDefault();
+                    comment.push($("#comment").val());
+                    console.log(comment);
+                    $("#post-btn").attr("disabled",true);
+                    $("#post-btn").html("Wait...");
+
+                    db.collection('blogs').doc('comments_'+id).update({
+                        comment:comment
+                    }).then(function (){
+                        comment = "";
+                        $("#comment-form").trigger('reset');
+                        $("#post-btn").html("success");
+                        setTimeout(function() {
+                            $("#post-btn").attr("disabled",false);
+                            $("#post-btn").html("Post");
+                        },1000);
+                    }).catch(function(err) {
+                        console.log(err);
+                    });
+                });
+
+                for (let i = 0; i < comment.length; i++) {
+                    var ui = `
+                        <div class="w-100 border-bottom border-light py-2 text-light d-flex">
+                            <i class="fa fa-user-circle-o mx-2" style="font-size:25px;"></i>
+                            <p style="font-weight: 200;" class="m-0 p-0">`+comment[i]+`</p>
+                        </div>
+                    `;
+                    $("#view-comments").append(ui);
+                }
+            }
+        });
+
+
+        
+
+
+        // db.collection('blogs').doc('comments').get({
+        //     blog_id:id
+        // }).then(function (res){
+            
+        //     comments = res.data().comment;
+            
+        //     $("#show-hide-comment-add").removeClass("d-none");
+        //     $("#load-comments").addClass("d-none");
+            
+        //     for (let i = 0; i < comments.length; i++) {
+        //         const element = comments[i];
+        //         console.log(element);
+        //         var ui = `
+        //             <div class="w-25 border-bottom border-light text-light d-flex align-items-center justify-content-center">
+        //                 <i class="fa fa-user-circle-o" style="font-size:25px;"></i>
+        //             </div>
+        //             <div class="w-75 pt-2 border-bottom border-light text-light d-flex align-items-center">
+        //                 <p style="font-weight: 200;">`+element+`</p>
+        //             </div>
+        //         `;
+        //         $("#view-comments").append(ui);
+        //     }
+
+        // }).catch(function(err) {
+        //     console.log(err);
+        // });
+    });
+    
+
+
+    
 });

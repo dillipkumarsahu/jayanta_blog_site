@@ -116,14 +116,11 @@ $(document).ready(function() {
             image:image_data,
             content:content,
             time:timestamp
+        }).then(function (){
+            $("#add-blog").trigger('reset');
+        }).catch(function(err) {
+            console.log(err);
         });
-        // console.log(result);
-        if(result)
-        {   
-            setTimeout(function(){
-                $("#add-blog").trigger("reset");
-            },1000);
-        }
     });
 });
 
